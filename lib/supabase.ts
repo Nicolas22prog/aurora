@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+import { supabaseServer} from '.supabaseServer'
+
+const supabaseUrl = process.env.SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error(
@@ -9,7 +11,7 @@ if (!supabaseUrl || !supabaseKey) {
   )
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     persistSession: false,
   },
@@ -27,24 +29,17 @@ export interface NumeroRecord {
 
 // Função para salvar um novo registro de rifas
 export async function saveRaffleEntry(nome: string, telefone: string, numero: number[]) {
-  try {
-    const record: Omit<NumeroRecord, "id" | "created_at" | "updated_at"> = {
-      nome,
-      telefone,
-      numero,
-    }
+  const { data, error } = await supabaseServer
+  .from('numero')
+  .insert({
+    nome,
+    telefone,
+    numero
+  })
 
-    const { data: result, error } = await supabase.from("numero").insert([record]).select()
-
-    if (error) {
-      throw new Error(`Erro ao salvar dados: ${error.message}`)
-    }
-
-    return result?.[0] || null
-  } catch (error) {
-    console.error("Erro na operação com Supabase:", error)
-    throw error
-  }
+  if(error) throw error
+  return data
+  
 }
 
 // Função para buscar todos os registros (opcional)
