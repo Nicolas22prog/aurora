@@ -56,11 +56,27 @@ export function GrandPrizeRaffle() {
   }, [])
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState((prev) => ({ ...prev, fullName: e.target.value }))
+    // Limite de 100 caracteres para o nome
+    const value = e.target.value.slice(0, 100)
+    setState((prev) => ({ ...prev, fullName: value }))
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState((prev) => ({ ...prev, cellphone: e.target.value }))
+    // Remove não-dígitos e limita a 11 dígitos (padrão brasileiro)
+    let value = e.target.value.replace(/\D/g, "").slice(0, 11)
+    
+    // Formata para (XX) XXXX-XXXX
+    if (value.length > 0) {
+      if (value.length <= 2) {
+        value = value
+      } else if (value.length <= 6) {
+        value = `(${value.slice(0, 2)}) ${value.slice(2)}`
+      } else {
+        value = `(${value.slice(0, 2)}) ${value.slice(2, 6)}-${value.slice(6)}`
+      }
+    }
+    
+    setState((prev) => ({ ...prev, cellphone: value }))
   }
 
   const handleNumberSelect = (num: number) => {
@@ -147,9 +163,11 @@ export function GrandPrizeRaffle() {
                     type="text"
                     placeholder="Nome completo"
                     value={state.fullName}
+                    maxLength={100}
                     onChange={handleNameChange}
                     className="h-14 w-full rounded-lg border border-input bg-card p-4 text-base font-normal text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">{state.fullName.length}/100</p>
                 </label>
 
                 {/* Cellphone Number TextField */}
@@ -159,9 +177,11 @@ export function GrandPrizeRaffle() {
                     type="tel"
                     placeholder="(xx) xxxx-xxxx"
                     value={state.cellphone}
+                    maxLength={14}
                     onChange={handlePhoneChange}
                     className="h-14 w-full rounded-lg border border-input bg-card p-4 text-base font-normal text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
+                  <p className="mt-1 text-xs text-muted-foreground">{state.cellphone.replace(/\D/g, "").length}/11</p>
                 </label>
               </div>
             </div>
