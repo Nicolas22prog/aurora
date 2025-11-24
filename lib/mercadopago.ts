@@ -1,6 +1,7 @@
 
 import { MercadoPagoConfig } from "mercadopago";
 import { saveRaffleEntry } from "./supabase";
+import crypto from "crypto"
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
@@ -12,8 +13,13 @@ interface Payer {
 }
 
 export const createPayment = async (payer: Payer, selectedNumbers: number[]) => {
-  // Ensure we have a base URL for redirection/notification. Prefer NEXT_PUBLIC_URL if set.
-  const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_VERCEL_URL || "http://localhost:3000"
+  // generate a unique token to correlate preference/payment with our app
+  const token = crypto.randomUUID()
+  // Ensure we have a base URL for redirection/notification.
+  // Prefer explicit `NEXT_PUBLIC_URL`. If running on Vercel, use the `VERCEL_URL`
+  // environment variable (automatically provided by Vercel) and ensure it has https://.
+  const inferredVercel = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined
+  const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_VERCEL_URL || inferredVercel || "http://localhost:3000"
 
   if (baseUrl.startsWith("http://localhost") || baseUrl.includes("127.0.0.1")) {
     console.warn("Using a localhost BACK_URL for Mercado Pago. Webhooks will not reach your machine unless you use a tunnel (ngrok). Data will be saved immediately on preference creation instead.")
@@ -59,6 +65,8 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
     }
   }
 
+  console.log("Creating Mercado Pago preference with back_urls using baseUrl:", baseUrl)
+
   const body: any = {
     items: selectedNumbers.map((number) => ({
       id: number.toString(),
@@ -74,13 +82,13 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
       },
     },
     back_urls: {
-      success: `${baseUrl}/success?numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
+      success: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
       failure: `${baseUrl}/failure`,
       pending: `${baseUrl}/pending`,
     },
     // include auto_return only when defined
     ...(autoReturn ? { auto_return: autoReturn } : {}),
-    external_reference: JSON.stringify({ ...payer, selectedNumbers }),
+    external_reference: JSON.stringify({ token, ...payer, selectedNumbers }),
     notification_url: `${baseUrl}/api/payment/webhook`,
   };
 
@@ -100,5 +108,5 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
   }
 
   const preference = await response.json();
-  return { id: preference.id, init_point: preference.init_point };
+  return { id: preference.id, init_point: preference.init_point, token };
 };
