@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { CheckCircle, AlertCircle, Loader, Copy, X, Download } from "lucide-react"
-import { getAllSelectedNumbers, saveRaffleEntry } from "@/lib/supabase"
+import { getAllSelectedNumbers } from "@/lib/supabaseBrowser"
 import QRCode from "qrcode"
 import axios from "axios"
 
