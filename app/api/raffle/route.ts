@@ -23,11 +23,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Salvar no banco de dados
-    const result = await saveRaffleEntry({
-      nome: nome.trim(),
-      telefone: telefone.trim(),
-      numero: numeros.sort((a: number, b: number) => a - b),
-    })
+    const result = await saveRaffleEntry(
+      nome.trim(),
+      telefone.trim(),
+      numeros.sort((a: number, b: number) => a - b)
+    )
 
     return NextResponse.json(
       {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-export async function POST(request: Request) {
-  // Este webhook não é mais utilizado
-  // Use /api/payment/webhook em vez disso
-  return NextResponse.json({ status: "ok" }, { status: 200 })
+// Este arquivo não é mais utilizado
+// O webhook de pagamento está em /api/payment/webhook
+export async function POST() {
+  return NextResponse.json({ status: "deprecated" }, { status: 200 })
 }
