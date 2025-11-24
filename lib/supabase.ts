@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
 
 import { supabaseServer} from './supabaseServer'
+export {supabaseServer}
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -30,16 +31,11 @@ export interface NumeroRecord {
 // Função para salvar um novo registro de rifas
 export async function saveRaffleEntry(nome: string, telefone: string, numero: number[]) {
   const { data, error } = await supabaseServer
-  .from('numero')
-  .insert({
-    nome,
-    telefone,
-    numero
-  })
+    .from('numero')
+    .insert({ nome, telefone, numero })
 
-  if(error) throw error
+  if (error) throw error
   return data
-  
 }
 
 // Função para buscar todos os registros (opcional)
