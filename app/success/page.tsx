@@ -1,9 +1,10 @@
 "use client"
 
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { RaffleConfirmation } from "@/components/raffle-confirmation"
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const numbers = searchParams.get("numbers") || ""
   const name = searchParams.get("name") || ""
@@ -28,5 +29,13 @@ export default function SuccessPage() {
         window.location.href = "/"
       }}
     />
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Carregando...</div>}>
+      <SuccessContent />
+    </Suspense>
   )
 }
