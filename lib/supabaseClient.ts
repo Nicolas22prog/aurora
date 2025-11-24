@@ -1,5 +1,5 @@
 // lib/supabaseClient.ts ← NOVO ARQUIVO
-import { createBrowserClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 export const supabaseBrowser = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
