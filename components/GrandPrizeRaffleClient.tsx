@@ -18,7 +18,7 @@ interface RaffleState {
   successMessage: string | null
 }
 
-export function GrandPrizeRaffle() {
+export default function GrandPrizeRaffle() {
   const qrCanvasRef = useRef<HTMLDivElement>(null)
   const [state, setState] = useState<RaffleState>(() => {
     // Estado inicial sem carregar do banco (será feito no useEffect)

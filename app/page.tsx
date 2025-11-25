@@ -1,4 +1,4 @@
-import { GrandPrizeRaffle } from "@/components/grand-prize-raffle"
+import GrandPrizeRaffle from "@/components/grand-prize-raffle"
 
 export default function Home() {
   return <GrandPrizeRaffle />
