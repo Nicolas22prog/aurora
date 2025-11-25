@@ -175,9 +175,9 @@ export default function GrandPrizeRaffle() {
                   <p className="pb-2 text-base font-medium text-foreground">Numero de Telefone </p>
                   <input
                     type="tel"
-                    placeholder="(xx) xxxx-xxxx"
+                    placeholder="(xx) xxxxx-xxxx"
                     value={state.cellphone}
-                    maxLength={14}
+                    maxLength={15}
                     onChange={handlePhoneChange}
                     className="h-14 w-full rounded-lg border border-input bg-card p-4 text-base font-normal text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
