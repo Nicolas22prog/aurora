@@ -89,7 +89,7 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
     back_urls: {
       success: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
       failure: `${baseUrl}/failure`,
-      pending: `${baseUrl}/pending`,
+      pending: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
     },
     // include auto_return only when defined
     ...(autoReturn ? { auto_return: autoReturn } : {}),
