@@ -37,38 +37,31 @@ export async function POST(request: NextRequest) {
     const status = (details && (details.status || details.payment_status)) || "unknown"
 
     if (String(status).toLowerCase() === "approved") {
-      let externalReference: any = details.external_reference || details.order?.external_reference || null
+  // === NOVA FORMA 100% CONFIÁVEL EM 2025 (usa metadata) ===
+  const metadata = details.metadata || {}
 
-      if (!externalReference) {
-        console.warn("Payment approved but external_reference is missing on payment details for id:", paymentId)
-        return NextResponse.json({ status: "no_external_reference" }, { status: 200 })
-      }
+  const fullName = metadata.nome || metadata.fullName
+  const cellphone = metadata.telefone || metadata.cellphone
+  const selectedNumbers = metadata.numeros || metadata.selectedNumbers
 
-      // Try parsing JSON external_reference, but allow objects too
-      try {
-        if (typeof externalReference === "string") {
-          externalReference = JSON.parse(externalReference)
-        }
-      } catch (err) {
-        console.warn("external_reference is not valid JSON, using raw value", externalReference)
-      }
+  if (!fullName || !cellphone || !selectedNumbers || !Array.isArray(selectedNumbers)) {
+    console.warn("Webhook: metadata incompleto ou inválido", metadata)
+    return NextResponse.json({ status: "bad_metadata" }, { status: 200 })
+  }
 
-      const { fullName, cellphone, selectedNumbers } = externalReference
-
-      if (!fullName || !cellphone || !selectedNumbers) {
-        console.warn("external_reference missing expected fields:", externalReference)
-        return NextResponse.json({ status: "bad_external_reference" }, { status: 200 })
-      }
-
-      try {
-        await saveRaffleEntry(fullName, cellphone, selectedNumbers)
-        console.log("Raffle entry saved successfully for payment:", paymentId)
-      } catch (err) {
-        console.error("Failed to save raffle entry from webhook:", err)
-        // Return 200 so Mercado Pago doesn't retry endlessly, but log for retrying manually
-        return NextResponse.json({ status: "save_failed" }, { status: 500 })
-      }
-    } else {
+  try {
+    await saveRaffleEntry(
+      fullName.trim(),
+      cellphone.replace(/\D/g, ''),
+      selectedNumbers
+    )
+    console.log(`✅ Números salvos com sucesso: ${selectedNumbers.join(", ")} - ${fullName}`)
+    return NextResponse.json({ status: "saved" }, { status: 200 })
+  } catch (err) {
+    console.error("❌ Erro ao salvar no Supabase:", err)
+    return NextResponse.json({ status: "save_error" }, { status: 500 })
+  }
+} else {
       console.log("Payment status is not approved (skipping save):", status)
     }
 

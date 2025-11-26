@@ -74,6 +74,11 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
       quantity: 1,
       unit_price: 10, // Preço por número
     })),
+    metadata: {
+      nome: payer.fullName.trim(),
+      telefone: payer.cellphone.replace(/\D/g, ""),
+      numeros: selectedNumbers,
+    },
     payer: {
       name: payer.fullName,
       phone: {
@@ -89,7 +94,7 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
     // include auto_return only when defined
     ...(autoReturn ? { auto_return: autoReturn } : {}),
     external_reference: JSON.stringify({ token, ...payer, selectedNumbers }),
-    notification_url: `${baseUrl}/api/payment/webhook`,
+    notification_url: `${baseUrl}/api/webhook`,
   };
 
   const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
