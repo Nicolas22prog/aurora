@@ -87,14 +87,14 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
       },
     },
     back_urls: {
-      success: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
+      success: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}&cellphone=${encodeURIComponent(payer.cellphone)}`,
       failure: `${baseUrl}/failure`,
-      pending: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}`,
+      pending: `${baseUrl}/success?token=${token}&numbers=${selectedNumbers.join(",")}&name=${encodeURIComponent(payer.fullName)}&cellphone=${encodeURIComponent(payer.cellphone)}`,
     },
     // include auto_return only when defined
     ...(autoReturn ? { auto_return: autoReturn } : {}),
     external_reference: JSON.stringify({ token, ...payer, selectedNumbers }),
-    notification_url: `${baseUrl}/api/webhook`,
+    notification_url: `${baseUrl}/api/payment/webhook`,
   };
 
   const response = await fetch("https://api.mercadopago.com/checkout/preferences", {
