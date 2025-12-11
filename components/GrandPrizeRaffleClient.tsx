@@ -245,14 +245,20 @@ export default function GrandPrizeRaffle() {
             <div className="flex flex-col gap-4">
               {/* Botão de Submit */}
               <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!state.fullName || !state.cellphone || state.selectedNumbers.size === 0 || state.loading}
-                  className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary px-8 text-base font-bold text-primary-foreground shadow-md transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                >
-                  {state.loading && <Loader className="h-5 w-5 animate-spin" />}
-                  {state.loading ? "Confirmando..." : "Ir para o pagamento"}
-                </button>
+                <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center">
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!state.fullName || !state.cellphone || state.selectedNumbers.size === 0 || state.loading}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-primary px-8 text-base font-bold text-primary-foreground shadow-md transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  >
+                    {state.loading && <Loader className="h-5 w-5 animate-spin" />}
+                    {state.loading ? "Confirmando..." : "Ir para o pagamento"}
+                  </button>
+
+                  <p className="text-xs text-muted-foreground text-center sm:text-left sm:ml-4 max-w-xs">
+                    ⚠️ Após o pagamento, clique no botão "Voltar ao site" para confirmar sua participação
+                  </p>
+                </div>
 
                 {state.successMessage && (
                   <div className="flex items-center gap-2 text-sm text-chart-1">
