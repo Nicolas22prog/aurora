@@ -80,18 +80,25 @@ export default function AdminPage() {
   const handleOAuthCallback = async (code: string, state: string) => {
     try {
       setConnecting(true);
+      console.log('OAuth Callback - Started with code:', code.substring(0, 20) + '...');
+      
       const response = await fetch('/api/auth/mercadopago/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, state }),
       });
 
+      console.log('OAuth Callback - Response Status:', response.status);
+
       if (!response.ok) {
         const error = await response.json();
+        console.error('OAuth Callback - Error response:', error);
         throw new Error(error.message || 'Erro ao conectar com Mercado Pago');
       }
 
       const data = await response.json();
+      console.log('OAuth Callback - Success, credentials received');
+      
       setCredentials(data);
       setMessage({ type: 'success', text: 'Conta do Mercado Pago conectada com sucesso!' });
       fetchSalesData(); // Recarregar dados de vendas
@@ -100,8 +107,8 @@ export default function AdminPage() {
       window.history.replaceState({}, document.title, '/admin');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.error('OAuth Callback - Exception:', error);
       setMessage({ type: 'error', text: errorMessage });
-      console.error('Erro no callback:', error);
     } finally {
       setConnecting(false);
     }

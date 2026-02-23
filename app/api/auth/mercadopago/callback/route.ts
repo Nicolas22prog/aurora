@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
   try {
     const { code, state } = await request.json();
 
+    console.log('OAuth Callback - Received code:', code ? 'YES' : 'NO');
+    console.log('OAuth Callback - State:', state);
+
     if (!code) {
       return NextResponse.json(
         { message: 'Código de autorização não fornecido' },
@@ -33,6 +36,10 @@ export async function POST(request: NextRequest) {
     const clientSecret = process.env.MERCADOPAGO_CLIENT_SECRET;
     const redirectUri = `${process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_VERCEL_URL}/admin`;
 
+    console.log('OAuth Callback - Client ID:', clientId ? 'CONFIGURED' : 'MISSING');
+    console.log('OAuth Callback - Client Secret:', clientSecret ? 'CONFIGURED' : 'MISSING');
+    console.log('OAuth Callback - Redirect URI:', redirectUri);
+
     if (!clientId || !clientSecret) {
       console.error('Mercado Pago credentials not configured');
       return NextResponse.json(
@@ -42,6 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Trocar o código por um access token
+    console.log('OAuth Callback - Requesting token from Mercado Pago...');
     const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',
       headers: {
@@ -56,18 +64,22 @@ export async function POST(request: NextRequest) {
       }).toString(),
     });
 
+    console.log('OAuth Callback - Token Response Status:', tokenResponse.status);
+
     if (!tokenResponse.ok) {
       const error = await tokenResponse.json();
       console.error('Token exchange failed:', error);
       return NextResponse.json(
-        { message: 'Erro ao trocar código por token' },
+        { message: `Erro ao trocar código por token: ${error.message}` },
         { status: tokenResponse.status }
       );
     }
 
     const tokenData: MercadoPagoTokenResponse = await tokenResponse.json();
+    console.log('OAuth Callback - Access Token obtained');
 
     // 2. Obter informações da conta do usuário
+    console.log('OAuth Callback - Requesting user info from Mercado Pago...');
     const userResponse = await fetch('https://api.mercadopago.com/v1/users/me', {
       method: 'GET',
       headers: {
@@ -75,18 +87,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('OAuth Callback - User Response Status:', userResponse.status);
+
     if (!userResponse.ok) {
       const error = await userResponse.json();
       console.error('Failed to get user info:', error);
       return NextResponse.json(
-        { message: 'Erro ao obter informações da conta' },
+        { message: `Erro ao obter informações da conta: ${error.message}` },
         { status: userResponse.status }
       );
     }
 
     const userData: MercadoPagoUserResponse = await userResponse.json();
+    console.log('OAuth Callback - User info obtained:', userData.id);
 
     // 3. Salvar as credenciais no banco de dados
+    console.log('OAuth Callback - Saving credentials to database...');
     const { data, error } = await supabase
       .from('mercadopago_credentials')
       .upsert(
@@ -110,11 +126,12 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { message: 'Erro ao salvar credenciais no banco de dados' },
+        { message: `Erro ao salvar credenciais no banco de dados: ${error.message}` },
         { status: 500 }
       );
     }
 
+    console.log('OAuth Callback - Credentials saved successfully');
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error('OAuth callback error:', error);
