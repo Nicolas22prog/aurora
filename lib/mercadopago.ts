@@ -1,15 +1,35 @@
 
-import { MercadoPagoConfig } from "mercadopago";
-import { saveRaffleEntry } from "./supabase";
+import { saveRaffleEntry, supabase } from "./supabase";
 import crypto from "crypto"
-
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
-});
 
 interface Payer {
   fullName: string;
   cellphone: string;
+}
+
+// Função auxiliar para obter o token do banco de dados
+async function getMercadoPagoAccessToken(): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('mercadopago_credentials')
+      .select('access_token')
+      .single();
+
+    if (error || !data) {
+      // Se não encontrar no banco, tentar usar variável de ambiente (fallback)
+      const envToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+      if (envToken) {
+        console.warn("Using fallback access token from environment variable");
+        return envToken;
+      }
+      throw new Error("Nenhuma credencial do Mercado Pago configurada. Acesse /admin para conectar sua conta.");
+    }
+
+    return data.access_token;
+  } catch (err) {
+    console.error("Error fetching Mercado Pago credentials:", err);
+    throw err;
+  }
 }
 
 export const createPayment = async (payer: Payer, selectedNumbers: number[]) => {
@@ -101,7 +121,7 @@ export const createPayment = async (payer: Payer, selectedNumbers: number[]) => 
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN!}`,
+      Authorization: `Bearer ${await getMercadoPagoAccessToken()}`,
     },
     body: JSON.stringify(body),
   });
