@@ -128,8 +128,11 @@ export default function AdminPage() {
       const redirectUri = `${window.location.origin}/admin`;
       const state = Math.random().toString(36).substring(7);
 
-      console.log('handleConnect - Client ID:', clientId);
-      console.log('handleConnect - Redirect URI:', redirectUri);
+      console.log('=== handleConnect Debug ===');
+      console.log('window.location.origin:', window.location.origin);
+      console.log('redirectUri:', redirectUri);
+      console.log('Client ID:', clientId);
+      console.log('State:', state);
 
       const oauthUrl = new URL('https://auth.mercadopago.com.br/authorization');
       oauthUrl.searchParams.append('client_id', clientId || '');
@@ -137,8 +140,11 @@ export default function AdminPage() {
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
       oauthUrl.searchParams.append('state', state);
 
-      console.log('handleConnect - OAuth URL:', oauthUrl.toString());
-      window.location.href = oauthUrl.toString();
+      const fullUrl = oauthUrl.toString();
+      console.log('Full OAuth URL:', fullUrl);
+      console.log('=== End Debug ===');
+      
+      window.location.href = fullUrl;
     } catch (error) {
       console.error('Error generating OAuth URL:', error);
       setMessage({ type: 'error', text: 'Erro ao gerar URL de autenticação' });
