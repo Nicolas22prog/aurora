@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
 
     console.log('OAuth Callback - Received code:', code ? 'YES' : 'NO');
     console.log('OAuth Callback - State:', state);
-    console.log('OAuth Callback - Code Verifier:', codeVerifier ? 'YES' : 'NO');
 
     if (!code) {
       return NextResponse.json(
@@ -60,12 +59,6 @@ export async function POST(request: NextRequest) {
       redirect_uri: redirectUri,
     };
 
-    // Se PKCE está habilitado, incluir o code_verifier
-    if (codeVerifier) {
-      tokenBody.code_verifier = codeVerifier;
-      console.log('OAuth Callback - Using PKCE code_verifier');
-    }
-
     const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',
       headers: {
@@ -75,17 +68,18 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('OAuth Callback - Token Response Status:', tokenResponse.status);
+    const tokenResponseText = await tokenResponse.text();
+    console.log('OAuth Callback - Token Response Body:', tokenResponseText);
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
-      console.error('Token exchange failed:', error);
+      console.error('Token exchange failed with status:', tokenResponse.status);
       return NextResponse.json(
-        { message: `Erro ao trocar código por token: ${error.message || JSON.stringify(error)}` },
+        { message: `Erro ao trocar código por token (${tokenResponse.status}): ${tokenResponseText}` },
         { status: tokenResponse.status }
       );
     }
 
-    const tokenData: MercadoPagoTokenResponse = await tokenResponse.json();
+    const tokenData: MercadoPagoTokenResponse = JSON.parse(tokenResponseText);
     console.log('OAuth Callback - Access Token obtained');
 
     // 2. Obter informações da conta do usuário

@@ -34,28 +34,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [codeVerifier, setCodeVerifier] = useState<string | null>(null);
-
-  // Função para gerar PKCE verifier
-  const generateCodeVerifier = (): string => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return btoa(String.fromCharCode.apply(null, Array.from(array)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  };
-
-  // Função para gerar PKCE challenge a partir do verifier
-  const generateCodeChallenge = async (verifier: string): Promise<string> => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(hash))))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  };
 
   useEffect(() => {
     // Buscar credenciais salvas
@@ -104,37 +82,31 @@ export default function AdminPage() {
       setConnecting(true);
       console.log('OAuth Callback - Started with code:', code.substring(0, 20) + '...');
       
-      // Recuperar o code_verifier do sessionStorage
-      const storedVerifier = sessionStorage.getItem('pkce_verifier');
-      console.log('OAuth Callback - Code Verifier retrieved:', storedVerifier ? 'YES' : 'NO');
-      
       const response = await fetch('/api/auth/mercadopago/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           code, 
           state,
-          codeVerifier: storedVerifier,
         }),
       });
 
       console.log('OAuth Callback - Response Status:', response.status);
+      const responseText = await response.text();
+      console.log('OAuth Callback - Response:', responseText);
 
       if (!response.ok) {
-        const error = await response.json();
+        const error = JSON.parse(responseText);
         console.error('OAuth Callback - Error response:', error);
         throw new Error(error.message || 'Erro ao conectar com Mercado Pago');
       }
 
-      const data = await response.json();
+      const data = JSON.parse(responseText);
       console.log('OAuth Callback - Success, credentials received');
       
       setCredentials(data);
       setMessage({ type: 'success', text: 'Conta do Mercado Pago conectada com sucesso!' });
       fetchSalesData(); // Recarregar dados de vendas
-      
-      // Limpar sessionStorage
-      sessionStorage.removeItem('pkce_verifier');
 
       // Limpar URL
       window.history.replaceState({}, document.title, '/admin');
@@ -151,35 +123,25 @@ export default function AdminPage() {
     try {
       setConnecting(true);
       
-      // Gerar PKCE verifier e challenge
-      const verifier = generateCodeVerifier();
-      const challenge = await generateCodeChallenge(verifier);
-      
-      // Armazenar o verifier para usar no callback
-      setCodeVerifier(verifier);
-      sessionStorage.setItem('pkce_verifier', verifier);
-      
-      console.log('PKCE - Verifier generated');
-      console.log('PKCE - Challenge generated');
-      
       // Redirecionar para OAuth do Mercado Pago
       const clientId = process.env.NEXT_PUBLIC_MERCADOPAGO_CLIENT_ID;
       const redirectUri = `${window.location.origin}/admin`;
       const state = Math.random().toString(36).substring(7);
+
+      console.log('handleConnect - Client ID:', clientId);
+      console.log('handleConnect - Redirect URI:', redirectUri);
 
       const oauthUrl = new URL('https://auth.mercadopago.com/authorization');
       oauthUrl.searchParams.append('client_id', clientId || '');
       oauthUrl.searchParams.append('response_type', 'code');
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
       oauthUrl.searchParams.append('state', state);
-      oauthUrl.searchParams.append('code_challenge', challenge);
-      oauthUrl.searchParams.append('code_challenge_method', 'S256');
 
-      console.log('OAuth URL:', oauthUrl.toString());
+      console.log('handleConnect - OAuth URL:', oauthUrl.toString());
       window.location.href = oauthUrl.toString();
     } catch (error) {
-      console.error('Error generating PKCE:', error);
-      setMessage({ type: 'error', text: 'Erro ao gerar códigos de segurança' });
+      console.error('Error generating OAuth URL:', error);
+      setMessage({ type: 'error', text: 'Erro ao gerar URL de autenticação' });
       setConnecting(false);
     }
   };
