@@ -131,7 +131,7 @@ export default function AdminPage() {
       console.log('handleConnect - Client ID:', clientId);
       console.log('handleConnect - Redirect URI:', redirectUri);
 
-      const oauthUrl = new URL('https://auth.mercadopago.com/authorization');
+      const oauthUrl = new URL('https://auth.mercadopago.com.br/authorization');
       oauthUrl.searchParams.append('client_id', clientId || '');
       oauthUrl.searchParams.append('response_type', 'code');
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
