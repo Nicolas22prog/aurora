@@ -20,10 +20,11 @@ interface MercadoPagoUserResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, state } = await request.json();
+    const { code, state, codeVerifier } = await request.json();
 
     console.log('OAuth Callback - Received code:', code ? 'YES' : 'NO');
     console.log('OAuth Callback - State:', state);
+    console.log('OAuth Callback - Code Verifier:', codeVerifier ? 'YES' : 'NO');
 
     if (!code) {
       return NextResponse.json(
@@ -50,18 +51,27 @@ export async function POST(request: NextRequest) {
 
     // 1. Trocar o código por um access token
     console.log('OAuth Callback - Requesting token from Mercado Pago...');
+    
+    const tokenBody: any = {
+      grant_type: 'authorization_code',
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+    };
+
+    // Se PKCE está habilitado, incluir o code_verifier
+    if (codeVerifier) {
+      tokenBody.code_verifier = codeVerifier;
+      console.log('OAuth Callback - Using PKCE code_verifier');
+    }
+
     const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        redirect_uri: redirectUri,
-      }).toString(),
+      body: JSON.stringify(tokenBody),
     });
 
     console.log('OAuth Callback - Token Response Status:', tokenResponse.status);
@@ -70,7 +80,7 @@ export async function POST(request: NextRequest) {
       const error = await tokenResponse.json();
       console.error('Token exchange failed:', error);
       return NextResponse.json(
-        { message: `Erro ao trocar código por token: ${error.message}` },
+        { message: `Erro ao trocar código por token: ${error.message || JSON.stringify(error)}` },
         { status: tokenResponse.status }
       );
     }
