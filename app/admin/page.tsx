@@ -170,7 +170,6 @@ export default function AdminPage() {
       const oauthUrl = new URL('https://auth.mercadopago.com/authorization');
       oauthUrl.searchParams.append('client_id', clientId || '');
       oauthUrl.searchParams.append('response_type', 'code');
-      oauthUrl.searchParams.append('platform_id', 'mp'); // minúsculo, não MP
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
       oauthUrl.searchParams.append('state', state);
       oauthUrl.searchParams.append('code_challenge', challenge);
