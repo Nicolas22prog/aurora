@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     if (error && error.code === 'PGRST116') {
       // Nenhum registro encontrado
-      return NextResponse.json(null, { status: 204 });
+      return NextResponse.json(null, { status: 200 });
     }
 
     if (error) {
