@@ -173,8 +173,9 @@ export default function AdminPage() {
       oauthUrl.searchParams.append('platform_id', 'MP');
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
       oauthUrl.searchParams.append('state', state);
-      oauthUrl.searchParams.append('code_challenge', codeChallenge);
-      oauthUrl.searchParams.append('code_challenge_method', 'S256');
+      // Removed code_challenge and code_challenge_method for testing
+      // oauthUrl.searchParams.append('code_challenge', codeChallenge);
+      // oauthUrl.searchParams.append('code_challenge_method', 'S256');
 
       const fullUrl = oauthUrl.toString();
       console.log('Full OAuth URL:', fullUrl);
