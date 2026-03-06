@@ -149,7 +149,7 @@ export default function AdminPage() {
       };
 
       // Generate PKCE verifier + challenge
-      const codeVerifier = base64url(window.crypto.getRandomValues(new Uint8Array(64)));
+      const codeVerifier = base64url(window.crypto.getRandomValues(new Uint8Array(64)).buffer);
       const challengeBuffer = await sha256(codeVerifier);
       const codeChallenge = base64url(challengeBuffer);
 
