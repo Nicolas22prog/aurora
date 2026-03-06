@@ -70,7 +70,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key> # recomendado para tarefas administrativas
 
 # Mercado Pago
+# Quando usar o fluxo OAuth de autorização (vendas em nome de terceiros)
+MERCADOPAGO_CLIENT_ID=<app_id>
+MERCADOPAGO_CLIENT_SECRET=<app_secret>
+# o valor abaixo é usado apenas como fallback durante dev, a aplicação armazena
+# o access token obtido via OAuth na tabela `mercadopago_credentials`.
 MERCADOPAGO_ACCESS_TOKEN=<mercadopago_token>
+
+# caso queira testar PKCE, o front-end gera o challenge automaticamente e o
+# servidor aceitará o código verificador (code_verifier) na request de
+# /api/auth/mercadopago/callback.
 
 # AbacatePay (se usar)
 ABACATE_PAY_API_KEY=<abacatepay_key>

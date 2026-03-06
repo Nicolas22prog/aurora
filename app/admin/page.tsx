@@ -81,13 +81,17 @@ export default function AdminPage() {
     try {
       setConnecting(true);
       console.log('OAuth Callback - Started with code:', code.substring(0, 20) + '...');
-      
+
+      // if we saved a PKCE verifier in storage, include it
+      const codeVerifier = sessionStorage.getItem('mp_pkce_verifier');
+
       const response = await fetch('/api/auth/mercadopago/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          code, 
+        body: JSON.stringify({
+          code,
           state,
+          codeVerifier,
         }),
       });
 
@@ -122,7 +126,35 @@ export default function AdminPage() {
   const handleConnect = async () => {
     try {
       setConnecting(true);
-      
+
+      // PKCE helper functions (browser-side, subtle crypto)
+      const randomString = (length: number) =>
+        window
+          .crypto
+          .getRandomValues(new Uint8Array(length))
+          .reduce((s, b) => s + String.fromCharCode(b % 255), '');
+
+      const base64url = (buffer: ArrayBuffer) => {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+      };
+
+      const sha256 = async (plain: string) => {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(plain);
+        const hash = await window.crypto.subtle.digest('SHA-256', data);
+        return hash;
+      };
+
+      // Generate PKCE verifier + challenge
+      const codeVerifier = base64url(window.crypto.getRandomValues(new Uint8Array(64)));
+      const challengeBuffer = await sha256(codeVerifier);
+      const codeChallenge = base64url(challengeBuffer);
+
+      sessionStorage.setItem('mp_pkce_verifier', codeVerifier);
+
       // Redirecionar para OAuth do Mercado Pago
       const clientId = process.env.NEXT_PUBLIC_MERCADOPAGO_CLIENT_ID;
       const redirectUri = `${window.location.origin}/admin`;
@@ -133,6 +165,7 @@ export default function AdminPage() {
       console.log('redirectUri:', redirectUri);
       console.log('Client ID:', clientId);
       console.log('State:', state);
+      console.log('PKCE challenge:', codeChallenge);
 
       const oauthUrl = new URL('https://auth.mercadopago.com.br/authorization');
       oauthUrl.searchParams.append('client_id', clientId || '');
@@ -140,11 +173,13 @@ export default function AdminPage() {
       oauthUrl.searchParams.append('platform_id', 'MP');
       oauthUrl.searchParams.append('redirect_uri', redirectUri);
       oauthUrl.searchParams.append('state', state);
+      oauthUrl.searchParams.append('code_challenge', codeChallenge);
+      oauthUrl.searchParams.append('code_challenge_method', 'S256');
 
       const fullUrl = oauthUrl.toString();
       console.log('Full OAuth URL:', fullUrl);
       console.log('=== End Debug ===');
-      
+
       window.location.href = fullUrl;
     } catch (error) {
       console.error('Error generating OAuth URL:', error);

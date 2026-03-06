@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
 
     console.log('OAuth Callback - Received code:', code ? 'YES' : 'NO');
     console.log('OAuth Callback - State:', state);
+    if (codeVerifier) console.log('OAuth Callback - PKCE verifier provided');
 
     if (!code) {
       return NextResponse.json(
@@ -58,6 +59,10 @@ export async function POST(request: NextRequest) {
       client_secret: clientSecret,
       redirect_uri: redirectUri,
     };
+
+    if (codeVerifier) {
+      tokenBody.code_verifier = codeVerifier;
+    }
 
     const tokenResponse = await fetch('https://api.mercadopago.com/oauth/token', {
       method: 'POST',

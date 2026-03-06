@@ -12,7 +12,9 @@ async function getMercadoPagoAccessToken(): Promise<string> {
   try {
     const { data, error } = await supabase
       .from('mercadopago_credentials')
-      .select('access_token')
+      .select(
+        'access_token, refresh_token, expires_in, updated_at, account_id'
+      )
       .single();
 
     if (error || !data) {
@@ -25,11 +27,65 @@ async function getMercadoPagoAccessToken(): Promise<string> {
       throw new Error("Nenhuma credencial do Mercado Pago configurada. Acesse /admin para conectar sua conta.");
     }
 
+    // refresh token automaticamente se expirado ou próximo de expirar
+    if (
+      data.expires_in &&
+      data.updated_at &&
+      data.refresh_token &&
+      Date.now() >
+        new Date(data.updated_at).getTime() + data.expires_in * 1000 - 60_000
+    ) {
+      console.log("Access token está expirando, renovando...");
+      return await refreshMercadoPagoToken(data.refresh_token, data.account_id);
+    }
+
     return data.access_token;
   } catch (err) {
     console.error("Error fetching Mercado Pago credentials:", err);
     throw err;
   }
+}
+
+// helper para trocar o refresh_token por um novo access_token
+async function refreshMercadoPagoToken(
+  refreshToken: string,
+  accountId: string
+): Promise<string> {
+  const clientId = process.env.MERCADOPAGO_CLIENT_ID!;
+  const clientSecret = process.env.MERCADOPAGO_CLIENT_SECRET!;
+
+  const body = {
+    grant_type: 'refresh_token',
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+  };
+
+  const resp = await fetch('https://api.mercadopago.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error('Failed to refresh MP token', resp.status, text);
+    throw new Error('Não foi possível renovar token Mercado Pago');
+  }
+
+  const data: any = await resp.json();
+
+  await supabase
+    .from('mercadopago_credentials')
+    .update({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || refreshToken,
+      expires_in: data.expires_in,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('account_id', accountId);
+
+  return data.access_token;
 }
 
 export const createPayment = async (payer: Payer, selectedNumbers: number[]) => {
